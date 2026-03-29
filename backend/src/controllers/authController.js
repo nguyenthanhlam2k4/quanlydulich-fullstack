@@ -17,11 +17,7 @@ export const register = async (req, res) => {
     const hashed = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
-      name,
-      email,
-      password: hashed,
-      phone: phone || "",
-      role: role || "user",  // ✅ nhận role từ body, mặc định là "user"
+      name, email, password: hashed, phone: phone || "", role: role || "user",
     });
 
     const token = jwt.sign(
@@ -31,12 +27,7 @@ export const register = async (req, res) => {
     );
 
     const { password: _, ...userWithoutPassword } = newUser.toObject();
-
-    res.status(201).json({
-      message: "Đăng ký thành công",
-      token,
-      user: userWithoutPassword,
-    });
+    res.status(201).json({ message: "Đăng ký thành công", token, user: userWithoutPassword });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
@@ -54,6 +45,11 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
 
+    // ✅ Kiểm tra tài khoản đã bị xóa mềm
+    if (user.isDeleted) {
+      return res.status(403).json({ message: "Tài khoản đã bị khóa, vui lòng liên hệ admin" });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
 
@@ -64,12 +60,7 @@ export const login = async (req, res) => {
     );
 
     const { password: _, ...userWithoutPassword } = user.toObject();
-
-    res.json({
-      message: "Đăng nhập thành công",
-      token,
-      user: userWithoutPassword,
-    });
+    res.json({ message: "Đăng nhập thành công", token, user: userWithoutPassword });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }

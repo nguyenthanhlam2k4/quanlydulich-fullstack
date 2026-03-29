@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, default: "" },
     role: { type: String, enum: ["admin", "user"], default: "user" },
     avatar: { type: String, default: "" },
+    isDeleted: { type: Boolean, default: false }, 
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

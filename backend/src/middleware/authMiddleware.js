@@ -12,8 +12,16 @@ export const verifyToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select("-password");
-    if (!req.user) return res.status(401).json({ message: "User không tồn tại" });
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) return res.status(401).json({ message: "User không tồn tại" });
+
+    // ✅ Chặn user đã bị xóa mềm
+    if (user.isDeleted) {
+      return res.status(403).json({ message: "Tài khoản đã bị khóa, vui lòng liên hệ admin" });
+    }
+
+    req.user = user;
     next();
   } catch (error) {
     return res.status(401).json({ message: "Token không hợp lệ" });

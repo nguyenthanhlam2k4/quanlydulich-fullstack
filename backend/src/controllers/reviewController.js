@@ -73,3 +73,17 @@ export const deleteReview = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
+// ✅ Lấy tất cả reviews (public - dùng cho trang home)
+export const getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .populate("userId", "name avatar")
+      .populate("tourId", "title")
+      .sort({ createdAt: -1 })
+      .limit(20);
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};

@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/connectionDB.js";
@@ -11,10 +14,16 @@ import favoriteRoutes from "./routes/favoriteRoutes.js";
 
 const app = express();
 
-app.use(cors());
+// ✅ CORS đầy đủ
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
+
 app.use(express.json());
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/tours", tourRoutes);
@@ -22,12 +31,8 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/favorites", favoriteRoutes);
 
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
+app.get("/", (req, res) => res.send("API is running..."));
 
 connectDB();
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
-});
+app.listen(5000, () => console.log("Server running on port 5000"));

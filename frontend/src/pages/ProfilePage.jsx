@@ -1,4 +1,3 @@
-// src/pages/ProfilePage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -9,7 +8,7 @@ export default function ProfilePage({ id: propId }) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
 
-  const { token, user } = useAuth();
+  const { token, user, setUser } = useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -52,6 +51,12 @@ export default function ProfilePage({ id: propId }) {
       );
 
       setUserData(res.data);
+
+      // ✅ Nếu đang sửa chính mình → cập nhật user trong AuthContext + localStorage
+      if (res.data._id === user._id) {
+        setUser(res.data);
+      }
+
       setEditing(false);
       Swal.fire({ icon: "success", title: "Đã lưu", text: "Thông tin đã được cập nhật." });
     } catch (err) {
@@ -65,7 +70,6 @@ export default function ProfilePage({ id: propId }) {
 
   return (
     <div className="max-w-xl mx-auto p-6 mt-10 bg-gradient-to-b from-blue-50 to-white shadow-lg rounded-xl">
-      {/* Avatar */}
       <div className="flex flex-col items-center">
         <img
           src={
@@ -80,7 +84,6 @@ export default function ProfilePage({ id: propId }) {
         {editing && <input type="file" accept="image/*" onChange={handleFileChange} className="mt-2" />}
       </div>
 
-      {/* Info */}
       <div className="mt-4 space-y-3 text-center">
         <div>
           <strong className="text-blue-700">Name: </strong>
@@ -114,11 +117,7 @@ export default function ProfilePage({ id: propId }) {
 
         <div>
           <strong className="text-blue-700">Role: </strong>
-          <span
-            className={`px-2 py-1 rounded ${
-              userData.role === "admin" ? "bg-blue-600 text-white" : "bg-blue-200 text-blue-800"
-            }`}
-          >
+          <span className={`px-2 py-1 rounded ${userData.role === "admin" ? "bg-blue-600 text-white" : "bg-blue-200 text-blue-800"}`}>
             {userData.role === "admin" ? "Admin" : "Thành viên"}
           </span>
         </div>
@@ -129,29 +128,19 @@ export default function ProfilePage({ id: propId }) {
         </div>
       </div>
 
-      {/* Buttons */}
       {userData._id === user._id && (
         <div className="mt-6 flex justify-center space-x-4">
           {editing ? (
             <>
-              <button
-                onClick={handleSave}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition"
-              >
+              <button onClick={handleSave} className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition">
                 Save
               </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-5 py-2 rounded-lg transition"
-              >
+              <button onClick={() => setEditing(false)} className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-5 py-2 rounded-lg transition">
                 Cancel
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition"
-            >
+            <button onClick={() => setEditing(true)} className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition">
               Edit Profile
             </button>
           )}

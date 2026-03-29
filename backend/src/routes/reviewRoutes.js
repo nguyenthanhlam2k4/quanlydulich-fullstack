@@ -1,8 +1,11 @@
 import express from "express";
-import { getReviewsByTour, createReview, deleteReview } from "../controllers/reviewController.js";
+import { getReviewsByTour, createReview, deleteReview, getAllReviews } from "../controllers/reviewController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// GET /api/reviews/all       → public, lấy tất cả reviews
+router.get("/all", getAllReviews);
 
 // GET /api/reviews/tour/:tourId  → public
 router.get("/tour/:tourId", getReviewsByTour);

@@ -1,17 +1,14 @@
-// src/contexts/AuthContext.jsx
 import { createContext, useState, useContext, useEffect } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // đọc user + token từ localStorage khi app load
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  // Khi token hoặc user thay đổi → cập nhật localStorage
   useEffect(() => {
     if (token) localStorage.setItem("token", token);
     else localStorage.removeItem("token");
@@ -20,8 +17,10 @@ export const AuthProvider = ({ children }) => {
     else localStorage.removeItem("user");
   }, [token, user]);
 
-  // logout function
   const logout = () => {
+    // ✅ Xóa localStorage trực tiếp, không chờ useEffect
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken(null);
     setUser(null);
   };

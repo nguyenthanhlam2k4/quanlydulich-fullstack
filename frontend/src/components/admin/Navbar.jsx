@@ -5,6 +5,7 @@ import { AiFillCalendar } from "react-icons/ai";
 import { MdLogout } from "react-icons/md";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const menuItems = [
     { icon: <FaUser />, label: "Users" },
@@ -14,6 +15,7 @@ const menuItems = [
 
 export const Navbar = ({ active, setActive }) => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
 
     const handleLogout = async () => {
         const result = await Swal.fire({
@@ -28,13 +30,12 @@ export const Navbar = ({ active, setActive }) => {
 
         if (!result.isConfirmed) return;
 
-        // ✅ UI-only: chỉ chuyển trang
+        logout();
         navigate("/login");
     };
 
     return (
         <div className="flex flex-col h-screen w-60 bg-white shadow-lg px-5 py-6">
-            {/* Logo */}
             <div className="flex items-center gap-2 text-3xl font-bold text-blue-600 mb-8">
                 <FaCarAlt />
                 <span>TrIP</span>
@@ -50,10 +51,9 @@ export const Navbar = ({ active, setActive }) => {
                         key={item.label}
                         onClick={() => setActive(item.label)}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-200
-                        ${
-                            active === item.label
-                                ? "bg-blue-600 text-white"
-                                : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        ${active === item.label
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                         }`}
                     >
                         <span className="text-lg">{item.icon}</span>
@@ -62,7 +62,6 @@ export const Navbar = ({ active, setActive }) => {
                 ))}
             </div>
 
-            {/* Logout */}
             <div
                 onClick={handleLogout}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-red-400 hover:bg-red-50 transition-colors duration-200"

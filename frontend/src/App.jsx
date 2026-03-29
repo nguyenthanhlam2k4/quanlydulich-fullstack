@@ -1,40 +1,38 @@
-// src/App.jsx
 import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Dashboard } from "./admin/Dashboard";
 import AuthPage from "./pages/AuthPage";
-import { AuthProvider } from "./contexts/AuthContext";
 import Home from "./pages/Home";
+import TourDetail from "./pages/TourDetail";
 import ProfilePage from "./pages/ProfilePage";
+import BookedPage from "./pages/BookedPage";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Trang login */}
         <Route path="/login" element={<AuthPage />} />
 
-        {/* Trang admin - phải đăng nhập + admin */}
-        <Route
-          path="/admin/*"
-          element={
-            <ProtectedRoute adminOnly={true}>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/admin/*" element={
+          <ProtectedRoute adminOnly={true}>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
 
-        {/* Trang profile - phải đăng nhập */}
-        <Route
-          path="/profile/:id"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/profile/:id" element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
 
-        {/* Trang chủ */}
+        <Route path="/booked" element={
+          <ProtectedRoute>
+            <BookedPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/tours/:id" element={<TourDetail />} />
         <Route path="/" element={<Home />} />
       </Routes>
     </AuthProvider>
