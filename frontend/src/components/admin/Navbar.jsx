@@ -31,7 +31,7 @@ export const Navbar = ({ active, setActive }) => {
         if (!result.isConfirmed) return;
 
         logout();
-        navigate("/login");
+        navigate("/");
     };
 
     return (
