@@ -54,6 +54,16 @@ export default function BookedPage() {
     }
   }
 
+
+  const handlePayment = async (bookingId) => {
+    try {
+      const res = await API.post("/payment/create", { bookingId })
+      window.location.href = res.data.paymentUrl
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Lỗi", text: err.response?.data?.message || "Lỗi server" })
+    }
+  }
+
   const filtered = filter === "all" ? bookings : bookings.filter(b => b.status === filter)
 
   return (
@@ -148,12 +158,20 @@ export default function BookedPage() {
                       {booking.totalPrice.toLocaleString("vi-VN")}đ
                     </p>
                     {booking.status === "pending" && (
-                      <button
-                        onClick={() => handleCancel(booking._id)}
-                        className="text-sm text-red-400 border border-red-200 px-4 py-1.5 rounded-lg hover:bg-red-50 transition"
-                      >
-                        Hủy booking
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handlePayment(booking._id)}
+                          className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg transition"
+                        >
+                          Thanh toán
+                        </button>
+                        <button
+                          onClick={() => handleCancel(booking._id)}
+                          className="text-sm text-red-400 border border-red-200 px-4 py-1.5 rounded-lg hover:bg-red-50 transition"
+                        >
+                          Hủy
+                        </button>
+                      </div>
                     )}
                     {booking.status === "confirmed" && (
                       <button

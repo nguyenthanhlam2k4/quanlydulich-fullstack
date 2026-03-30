@@ -3,8 +3,8 @@ import API from "../services/api";
 import Swal from "sweetalert2";
 
 const statusConfig = {
-  pending:   { label: "Chờ xác nhận", color: "bg-yellow-100 text-yellow-700" },
-  confirmed: { label: "Đã xác nhận",  color: "bg-green-100 text-green-700"  },
+  pending:   { label: "Chờ thanh toán", color: "bg-yellow-100 text-yellow-700" },
+  confirmed: { label: "Đã thanh toán",  color: "bg-green-100 text-green-700"  },
   cancelled: { label: "Đã hủy",       color: "bg-red-100 text-red-500"      },
 };
 
@@ -65,8 +65,8 @@ export const ManageBookings = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Tổng booking", value: stats.total, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Chờ xác nhận", value: stats.pending, color: "text-yellow-600", bg: "bg-yellow-50" },
-          { label: "Đã xác nhận", value: stats.confirmed, color: "text-green-600", bg: "bg-green-50" },
+          { label: "Chờ thanh toán", value: stats.pending, color: "text-yellow-600", bg: "bg-yellow-50" },
+          { label: "Đã thanh toán", value: stats.confirmed, color: "text-green-600", bg: "bg-green-50" },
           { label: "Doanh thu", value: stats.revenue.toLocaleString("vi-VN") + "đ", color: "text-purple-600", bg: "bg-purple-50" },
         ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-4`}>
@@ -87,8 +87,8 @@ export const ManageBookings = () => {
         <div className="flex gap-3 mb-4">
           <select className="border rounded-lg px-3 py-1.5 text-sm outline-none" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="all">Tất cả trạng thái</option>
-            <option value="pending">Chờ xác nhận</option>
-            <option value="confirmed">Đã xác nhận</option>
+            <option value="pending">Chờ thanh toán</option>
+            <option value="confirmed">Đã thanh toán</option>
             <option value="cancelled">Đã hủy</option>
           </select>
           <select className="border rounded-lg px-3 py-1.5 text-sm outline-none" value={sort} onChange={e => setSort(e.target.value)}>

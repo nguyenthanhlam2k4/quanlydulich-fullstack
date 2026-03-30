@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import TourDetail from "./pages/TourDetail";
 import ProfilePage from "./pages/ProfilePage";
 import BookedPage from "./pages/BookedPage";
+import PaymentResult from "./pages/PaymentResult";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/payment/result" element={<PaymentResult />} />
         <Route path="/tours/:id" element={<TourDetail />} />
         <Route path="/" element={<Home />} />
       </Routes>
