@@ -4,8 +4,8 @@ import Swal from "sweetalert2";
 
 const statusConfig = {
   pending:   { label: "Chờ thanh toán", color: "bg-yellow-100 text-yellow-700" },
-  confirmed: { label: "Đã thanh toán",  color: "bg-green-100 text-green-700"  },
-  cancelled: { label: "Đã hủy",       color: "bg-red-100 text-red-500"      },
+  confirmed: { label: "Đã xác nhận",    color: "bg-green-100 text-green-700"  },
+  cancelled: { label: "Đã hủy",         color: "bg-red-100 text-red-500"      },
 };
 
 export const ManageBookings = () => {
@@ -25,11 +25,55 @@ export const ManageBookings = () => {
 
   useEffect(() => { fetchBookings(); }, []);
 
-  const handleUpdateStatus = async (id, status) => {
+  // ✅ Xác nhận — chỉ khi đã thanh toán
+  const handleConfirm = async (id) => {
+    const result = await Swal.fire({
+      title: "Xác nhận booking?",
+      text: "Email kèm mã QR sẽ được gửi đến khách hàng.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#22c55e",
+      confirmButtonText: "Xác nhận & Gửi email",
+      cancelButtonText: "Hủy",
+    });
+    if (!result.isConfirmed) return;
+
     try {
-      await API.put(`/bookings/${id}/status`, { status });
-      setBookings(bookings.map(b => b._id === id ? { ...b, status } : b));
-      Swal.fire({ icon: "success", title: "Cập nhật thành công", timer: 1200, showConfirmButton: false });
+      await API.put(`/bookings/${id}/status`, { status: "confirmed" });
+      fetchBookings();
+      Swal.fire({ icon: "success", title: "Đã xác nhận!", text: "Email QR đã được gửi đến khách hàng.", timer: 2000, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Lỗi", text: err.response?.data?.message || "Lỗi server" });
+    }
+  };
+
+  // ✅ Hủy booking
+  const handleCancel = async (id) => {
+    const result = await Swal.fire({
+      title: "Hủy booking?", icon: "warning",
+      showCancelButton: true, confirmButtonColor: "#ef4444",
+      confirmButtonText: "Hủy booking", cancelButtonText: "Không",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await API.put(`/bookings/${id}/status`, { status: "cancelled" });
+      fetchBookings();
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Lỗi", text: err.response?.data?.message || "Lỗi server" });
+    }
+  };
+
+  // ✅ Xóa mềm booking đã hủy
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Xóa booking này?", text: "Booking đã hủy sẽ bị ẩn khỏi danh sách.",
+      icon: "warning", showCancelButton: true,
+      confirmButtonColor: "#ef4444", confirmButtonText: "Xóa", cancelButtonText: "Hủy",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await API.delete(`/bookings/${id}`);
+      fetchBookings();
     } catch (err) {
       Swal.fire({ icon: "error", title: "Lỗi", text: err.response?.data?.message || "Lỗi server" });
     }
@@ -49,13 +93,12 @@ export const ManageBookings = () => {
       : new Date(a.createdAt) - new Date(b.createdAt)
     );
 
-  // Thống kê nhanh
   const stats = {
     total: bookings.length,
     pending: bookings.filter(b => b.status === "pending").length,
     confirmed: bookings.filter(b => b.status === "confirmed").length,
     cancelled: bookings.filter(b => b.status === "cancelled").length,
-    revenue: bookings.filter(b => b.status === "confirmed").reduce((sum, b) => sum + b.totalPrice, 0),
+    revenue: bookings.filter(b => b.status === "confirmed").reduce((s, b) => s + b.totalPrice, 0),
   };
 
   return (
@@ -64,10 +107,10 @@ export const ManageBookings = () => {
       {/* Thống kê */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Tổng booking", value: stats.total, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Chờ thanh toán", value: stats.pending, color: "text-yellow-600", bg: "bg-yellow-50" },
-          { label: "Đã thanh toán", value: stats.confirmed, color: "text-green-600", bg: "bg-green-50" },
-          { label: "Doanh thu", value: stats.revenue.toLocaleString("vi-VN") + "đ", color: "text-purple-600", bg: "bg-purple-50" },
+          { label: "Tổng booking",     value: stats.total,                                  color: "text-blue-600",   bg: "bg-blue-50"   },
+          { label: "Chờ thanh toán",   value: stats.pending,                                color: "text-yellow-600", bg: "bg-yellow-50" },
+          { label: "Đã xác nhận",      value: stats.confirmed,                              color: "text-green-600",  bg: "bg-green-50"  },
+          { label: "Doanh thu",        value: stats.revenue.toLocaleString("vi-VN") + "đ",  color: "text-purple-600", bg: "bg-purple-50" },
         ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-4`}>
             <p className="text-xs text-gray-500 mb-1">{s.label}</p>
@@ -77,18 +120,20 @@ export const ManageBookings = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow p-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-700">Danh sách Bookings</h2>
-          <input type="text" placeholder="Tìm theo tên / tour..." className="bg-gray-100 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-300 w-56" value={search} onChange={e => setSearch(e.target.value)} />
+          <input
+            type="text" placeholder="Tìm theo tên / tour..."
+            className="bg-gray-100 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-300 w-56"
+            value={search} onChange={e => setSearch(e.target.value)}
+          />
         </div>
 
-        {/* Filter */}
         <div className="flex gap-3 mb-4">
           <select className="border rounded-lg px-3 py-1.5 text-sm outline-none" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="all">Tất cả trạng thái</option>
             <option value="pending">Chờ thanh toán</option>
-            <option value="confirmed">Đã thanh toán</option>
+            <option value="confirmed">Đã xác nhận</option>
             <option value="cancelled">Đã hủy</option>
           </select>
           <select className="border rounded-lg px-3 py-1.5 text-sm outline-none" value={sort} onChange={e => setSort(e.target.value)}>
@@ -97,7 +142,6 @@ export const ManageBookings = () => {
           </select>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead>
@@ -106,6 +150,7 @@ export const ManageBookings = () => {
                 <th>Tour</th>
                 <th>Số người</th>
                 <th>Tổng tiền</th>
+                <th>Thanh toán</th>
                 <th>Ngày đặt</th>
                 <th>Trạng thái</th>
                 <th className="text-right">Hành động</th>
@@ -113,7 +158,7 @@ export const ManageBookings = () => {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-6 text-gray-400">Không có dữ liệu</td></tr>
+                <tr><td colSpan={8} className="text-center py-6 text-gray-400">Không có dữ liệu</td></tr>
               ) : filtered.map((booking) => (
                 <tr key={booking._id} className="border-b hover:bg-gray-50">
                   <td className="py-2">
@@ -134,6 +179,12 @@ export const ManageBookings = () => {
                   </td>
                   <td className="text-center">{booking.numberOfPeople}</td>
                   <td className="text-blue-600 font-medium">{booking.totalPrice?.toLocaleString("vi-VN")}đ</td>
+                  <td>
+                    {booking.isPaid
+                      ? <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Đã TT</span>
+                      : <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Chưa TT</span>
+                    }
+                  </td>
                   <td className="text-gray-500">{new Date(booking.bookingDate).toLocaleDateString("vi-VN")}</td>
                   <td>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig[booking.status]?.color}`}>
@@ -141,25 +192,41 @@ export const ManageBookings = () => {
                     </span>
                   </td>
                   <td className="text-right">
-                    {booking.status === "pending" && (
-                      <div className="flex gap-2 justify-end">
+                    <div className="flex gap-1.5 justify-end">
+                      {/* ✅ Chỉ hiện nút Xác nhận khi đã thanh toán và đang pending */}
+                      {booking.status === "pending" && booking.isPaid && (
                         <button
-                          onClick={() => handleUpdateStatus(booking._id, "confirmed")}
+                          onClick={() => handleConfirm(booking._id)}
                           className="text-xs bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded hover:bg-green-100 transition"
                         >
                           Xác nhận
                         </button>
+                      )}
+
+                      {/* Nút Hủy khi đang pending */}
+                      {booking.status === "pending" && (
                         <button
-                          onClick={() => handleUpdateStatus(booking._id, "cancelled")}
+                          onClick={() => handleCancel(booking._id)}
                           className="text-xs bg-red-50 text-red-500 border border-red-200 px-2 py-1 rounded hover:bg-red-100 transition"
                         >
                           Hủy
                         </button>
-                      </div>
-                    )}
-                    {booking.status !== "pending" && (
-                      <span className="text-xs text-gray-300">—</span>
-                    )}
+                      )}
+
+                      {/* ✅ Nút Xóa chỉ khi đã hủy */}
+                      {booking.status === "cancelled" && (
+                        <button
+                          onClick={() => handleDelete(booking._id)}
+                          className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-1 rounded hover:bg-gray-100 transition"
+                        >
+                          Xóa
+                        </button>
+                      )}
+
+                      {booking.status === "confirmed" && (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

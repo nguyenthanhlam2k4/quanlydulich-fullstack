@@ -12,11 +12,12 @@ const bookingSchema = new mongoose.Schema(
       default: "pending",
     },
     bookingDate: { type: Date, default: Date.now },
-    // ✅ Thanh toán
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date, default: null },
     paymentMethod: { type: String, default: "vnpay" },
     vnpayTxnRef: { type: String, default: "" },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

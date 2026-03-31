@@ -106,7 +106,7 @@ export const vnpayReturn = async (req, res) => {
 
     if (responseCode === "00") {
       await Booking.findByIdAndUpdate(bookingId, {
-        status: "confirmed",
+        isPaid: true,
         isPaid: true,
         paidAt: new Date(),
         vnpayTxnRef: vnpParams["vnp_TransactionNo"],
