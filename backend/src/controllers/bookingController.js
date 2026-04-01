@@ -198,7 +198,7 @@ export const softDeleteBooking = async (req, res) => {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: "Không tìm thấy booking" });
 
-    if (booking.status !== "cancelled") {
+    if (!["cancelled", "confirmed"].includes(booking.status)) {
       return res.status(400).json({ message: "Chỉ có thể xóa booking đã hủy" });
     }
 

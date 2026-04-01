@@ -193,7 +193,17 @@ export const ManageBookings = () => {
                   </td>
                   <td className="text-right">
                     <div className="flex gap-1.5 justify-end">
-                      {/* ✅ Chỉ hiện nút Xác nhận khi đã thanh toán và đang pending */}
+                      {/* Chờ thanh toán (chưa TT) → chỉ nút Hủy */}
+                      {booking.status === "pending" && !booking.isPaid && (
+                        <button
+                          onClick={() => handleCancel(booking._id)}
+                          className="text-xs bg-red-50 text-red-500 border border-red-200 px-2 py-1 rounded hover:bg-red-100 transition"
+                        >
+                          Hủy
+                        </button>
+                      )}
+
+                      {/* Đã thanh toán, chờ xác nhận → chỉ nút Xác nhận */}
                       {booking.status === "pending" && booking.isPaid && (
                         <button
                           onClick={() => handleConfirm(booking._id)}
@@ -203,18 +213,8 @@ export const ManageBookings = () => {
                         </button>
                       )}
 
-                      {/* Nút Hủy khi đang pending */}
-                      {booking.status === "pending" && (
-                        <button
-                          onClick={() => handleCancel(booking._id)}
-                          className="text-xs bg-red-50 text-red-500 border border-red-200 px-2 py-1 rounded hover:bg-red-100 transition"
-                        >
-                          Hủy
-                        </button>
-                      )}
-
-                      {/* ✅ Nút Xóa chỉ khi đã hủy */}
-                      {booking.status === "cancelled" && (
+                      {/* Đã xác nhận → nút Xóa */}
+                      {booking.status === "confirmed" && (
                         <button
                           onClick={() => handleDelete(booking._id)}
                           className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-1 rounded hover:bg-gray-100 transition"
@@ -223,8 +223,14 @@ export const ManageBookings = () => {
                         </button>
                       )}
 
-                      {booking.status === "confirmed" && (
-                        <span className="text-xs text-gray-300">—</span>
+                      {/* Đã hủy → nút Xóa */}
+                      {booking.status === "cancelled" && (
+                        <button
+                          onClick={() => handleDelete(booking._id)}
+                          className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-1 rounded hover:bg-gray-100 transition"
+                        >
+                          Xóa
+                        </button>
                       )}
                     </div>
                   </td>
