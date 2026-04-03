@@ -2,7 +2,7 @@ import { useState } from "react";
 import { login, register } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { FaCarAlt, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaCarAlt, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash, FaArrowLeft } from "react-icons/fa";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -50,6 +50,15 @@ export default function AuthPage() {
 
       {/* ── LEFT PANEL ── */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-blue-600 flex-col items-center justify-center p-12">
+        {/* Back button */}
+        <button
+          onClick={() => navigate("/")}
+          className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition"
+        >
+          <FaArrowLeft className="text-xs" />
+          Về trang chủ
+        </button>
+
         {/* Background circles */}
         <div className="absolute top-[-80px] left-[-80px] w-80 h-80 rounded-full bg-blue-500 opacity-50" />
         <div className="absolute bottom-[-60px] right-[-60px] w-64 h-64 rounded-full bg-blue-700 opacity-60" />
