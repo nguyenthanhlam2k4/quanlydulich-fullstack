@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { FaStar, FaMapMarkerAlt, FaClock, FaHeart } from 'react-icons/fa'
+import { FaStar, FaMapMarkerAlt, FaClock, FaHeart, FaUsers, FaFire } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import API from '../../services/api'
+import Swal from 'sweetalert2'
 
 const priceFilter = (tour, range) => {
   if (range === "all") return true
@@ -14,103 +16,147 @@ const priceFilter = (tour, range) => {
 export const TourList = ({ filters = {} }) => {
   const [tours, setTours] = useState([])
   const [loading, setLoading] = useState(true)
+  const [favorites, setFavorites] = useState([])
+  const [sortBy, setSortBy] = useState("newest")
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await API.get("/tours")
-        setTours(res.data)
-      } catch {
-        setTours([])
-      } finally {
-        setLoading(false)
-      }
+    API.get("/tours").then(r => setTours(r.data)).catch(() => setTours([])).finally(() => setLoading(false))
+    if (user) {
+      API.get("/favorites").then(r => setFavorites(r.data.map(f => f.tourId?._id))).catch(() => {})
     }
-    fetch()
-  }, [])
+  }, [user])
 
-  const filtered = tours.filter((t) => {
-    const matchKeyword = filters.keyword
-      ? t.title.toLowerCase().includes(filters.keyword.toLowerCase())
-      : true
-    const matchLocation = filters.location
-      ? t.location.toLowerCase().includes(filters.location.toLowerCase())
-      : true
+  const handleFavorite = async (e, tourId) => {
+    e.stopPropagation()
+    if (!user) { navigate("/login"); return }
+    try {
+      const res = await API.post("/favorites", { tourId })
+      if (res.data.isFavorite) setFavorites([...favorites, tourId])
+      else setFavorites(favorites.filter(id => id !== tourId))
+    } catch {}
+  }
+
+  let filtered = tours.filter((t) => {
+    const matchKeyword = filters.keyword ? t.title.toLowerCase().includes(filters.keyword.toLowerCase()) : true
+    const matchLocation = filters.location ? t.location.toLowerCase().includes(filters.location.toLowerCase()) : true
     const matchPrice = priceFilter(t, filters.priceRange || "all")
     return matchKeyword && matchLocation && matchPrice
   })
 
+  if (sortBy === "price-asc") filtered = [...filtered].sort((a, b) => a.price - b.price)
+  else if (sortBy === "price-desc") filtered = [...filtered].sort((a, b) => b.price - a.price)
+  else if (sortBy === "rating") filtered = [...filtered].sort((a, b) => (b.rating || 0) - (a.rating || 0))
+
   if (loading) return (
-    <div className="text-center py-16 text-gray-400">Đang tải tour...</div>
+    <div className="text-center py-16">
+      <div className="inline-block w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
   )
 
   return (
-    <section id="tour-list" className="max-w-6xl mx-auto px-6 py-12">
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Tour nổi bật</h2>
-      <p className="text-gray-500 mb-8">Những hành trình được yêu thích nhất</p>
+    <section id="tour-list" className="max-w-6xl mx-auto px-6 py-14">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-1">Tất cả Tours</h2>
+          <p className="text-gray-500 text-sm">{filtered.length} tour phù hợp</p>
+        </div>
+
+        {/* Sort */}
+        <select className="border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+          value={sortBy} onChange={e => setSortBy(e.target.value)}>
+          <option value="newest">Mới nhất</option>
+          <option value="price-asc">Giá thấp → cao</option>
+          <option value="price-desc">Giá cao → thấp</option>
+          <option value="rating">Đánh giá cao nhất</option>
+        </select>
+      </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">Không tìm thấy tour phù hợp</div>
+        <div className="text-center py-20 text-gray-400">
+          <p className="text-lg mb-2">Không tìm thấy tour phù hợp</p>
+          <p className="text-sm">Thử thay đổi bộ lọc tìm kiếm</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((tour) => (
-            <div
-              key={tour._id}
-              onClick={() => navigate(`/tours/${tour._id}`)}
-              className="bg-white rounded-2xl shadow hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group"
-            >
-              {/* Ảnh */}
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={tour.images?.[0] || `https://picsum.photos/seed/${tour._id}/400/250`}
-                  alt={tour.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute top-3 right-3 bg-white/90 rounded-full p-1.5 text-red-400 hover:text-red-500">
-                  <FaHeart className="text-sm" />
-                </div>
-                {tour.availableSlots <= 5 && (
-                  <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                    Sắp hết chỗ
-                  </span>
-                )}
-              </div>
+          {filtered.map((tour, idx) => {
+            const isFav = favorites.includes(tour._id)
+            const isHot = idx < 3
+            return (
+              <div key={tour._id} onClick={() => navigate(`/tours/${tour._id}`)}
+                className="bg-white rounded-2xl shadow hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group hover:-translate-y-1">
 
-              {/* Info */}
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-800 mb-1 line-clamp-1">{tour.title}</h3>
+                {/* Image */}
+                <div className="relative h-52 overflow-hidden">
+                  <img
+                    src={tour.images?.[0] || `https://picsum.photos/seed/${tour._id}/400/300`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                <div className="flex items-center gap-1 text-gray-500 text-sm mb-2">
-                  <FaMapMarkerAlt className="text-blue-400 shrink-0" />
-                  <span>{tour.location}</span>
-                </div>
-
-                <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
-                  <div className="flex items-center gap-1">
-                    <FaClock className="text-blue-400" />
-                    <span>{tour.duration}</span>
+                  {/* Badges */}
+                  <div className="absolute top-3 left-3 flex gap-2">
+                    {isHot && (
+                      <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                        <FaFire className="text-xs" /> Hot
+                      </span>
+                    )}
+                    {tour.availableSlots <= 5 && tour.availableSlots > 0 && (
+                      <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                        Sắp hết chỗ
+                      </span>
+                    )}
+                    {tour.availableSlots === 0 && (
+                      <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                        Hết chỗ
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <FaStar className="text-yellow-400" />
-                    <span>{tour.rating || "Mới"}</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-blue-600 font-bold text-lg">
-                      {tour.price.toLocaleString("vi-VN")}đ
-                    </span>
-                    <span className="text-gray-400 text-xs"> /người</span>
-                  </div>
-                  <button className="bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-500 text-xs font-medium px-3 py-1.5 rounded-lg transition">
-                    Đặt ngay
+                  {/* Favorite */}
+                  <button
+                    onClick={(e) => handleFavorite(e, tour._id)}
+                    className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow transition-all duration-200
+                      ${isFav ? "bg-red-500 text-white" : "bg-white text-gray-400 hover:text-red-400"}`}
+                  >
+                    <FaHeart className="text-sm" />
                   </button>
+
+                  {/* Price tag */}
+                  <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    {tour.price?.toLocaleString("vi-VN")}đ/người
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-800 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">{tour.title}</h3>
+
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 mb-3">
+                    <span className="flex items-center gap-1"><FaMapMarkerAlt className="text-blue-400" />{tour.location}</span>
+                    <span className="flex items-center gap-1"><FaClock className="text-blue-400" />{tour.duration}</span>
+                    <span className="flex items-center gap-1"><FaUsers className="text-blue-400" />{tour.availableSlots} chỗ trống</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(s => (
+                        <FaStar key={s} className={`text-xs ${s <= Math.round(tour.rating || 0) ? "text-yellow-400" : "text-gray-200"}`} />
+                      ))}
+                      <span className="text-xs text-gray-400 ml-1">({tour.rating || "Mới"})</span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/tours/${tour._id}`) }}
+                      className="bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200">
+                      Đặt ngay
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </section>
