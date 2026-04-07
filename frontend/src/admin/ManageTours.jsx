@@ -14,9 +14,13 @@ export const ManageTours = () => {
   const [editTour, setEditTour] = useState(null)
 
   const fetchTours = async () => {
-    try { const res = await API.get("/tours"); setTours(res.data) }
-    catch (err) { console.error(err) }
-  }
+    try {
+      const res = await API.get("/tours");
+      setTours(res.data.tours); // ✅ lấy đúng mảng
+    } catch (err) {
+      console.error(err);
+    }
+  };
   useEffect(() => { fetchTours() }, [])
 
   const handleDelete = async (id) => {
@@ -26,10 +30,17 @@ export const ManageTours = () => {
     catch (err) { Swal.fire({ icon: "error", title: "Lỗi", text: err.response?.data?.message }) }
   }
 
-  const filtered = tours
-    .filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase()) || t.location.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => sort === "newest" ? new Date(b.createdAt) - new Date(a.createdAt) : new Date(a.createdAt) - new Date(b.createdAt))
-
+  const filtered = (tours || [])
+    .filter(t =>
+      !search ||
+      t.title?.toLowerCase().includes(search.toLowerCase()) ||
+      t.location?.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) =>
+      sort === "newest"
+        ? new Date(b.createdAt) - new Date(a.createdAt)
+        : new Date(a.createdAt) - new Date(b.createdAt)
+    );
   return (
     <div className="flex flex-col gap-6">
       <div className="bg-white rounded-2xl shadow p-6">
